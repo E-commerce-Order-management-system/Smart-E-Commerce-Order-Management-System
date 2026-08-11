@@ -1,9 +1,11 @@
 # Problem Statement
 
-E-commerce platforms handle large amounts of information related to customers, products, orders, payments, and deliveries.
+Develop a relational database system for managing the major operations of an e-commerce platform, including customers, products, sellers, orders, order items, payments, and shipments.
 
-Managing these operations efficiently requires a structured database that maintains relationships between different entities while ensuring data consistency and integrity.
+## Need for the System
 
-The proposed Smart E-Commerce Order Management System is designed to provide a centralized relational database for managing customers, products, categories, orders, payments, addresses, sellers, and shipments.
+An e-commerce platform generates large amounts of related data. A structured relational database is required to store this data consistently, maintain relationships between entities, reduce redundancy, and support efficient querying and reporting.
 
-The system aims to simplify order management by maintaining accurate relationships between customers and their orders, products and order items, payments, and shipment information.
+## Scope
+
+The system focuses on database design and SQL implementation for core e-commerce order-management operations.

@@ -1,0 +1,2 @@
+-- Create the relational database tables here.
+-- Add primary keys, foreign keys, constraints, and appropriate data types.
