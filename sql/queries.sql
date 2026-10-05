@@ -1,2 +1,0 @@
--- Add SELECT queries demonstrating the main DBMS requirements.
--- Include filtering, joins, grouping, aggregation, subqueries, and ordering as required.
