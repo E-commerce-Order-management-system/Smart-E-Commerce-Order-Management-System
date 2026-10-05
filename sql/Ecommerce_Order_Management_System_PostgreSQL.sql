@@ -1,11 +1,11 @@
 -- E-COMMERCE ORDER MANAGEMENT SYSTEM
 -- DBMS Capstone Project
 -- PostgreSQL version
-
+--
 -- STEP 1: Run the following database command while connected to the default
 -- PostgreSQL database (usually "postgres"):
 -- CREATE DATABASE ecommerce_order_management;
-
+--
 -- STEP 2: In pgAdmin, connect/open Query Tool for the newly created
 -- ecommerce_order_management database and run the rest of this script.
 
@@ -160,8 +160,14 @@ INSERT INTO Product
 ('Laptop Backpack','Water-resistant backpack',1499.00,75,4);
 
 INSERT INTO Product_Tags (product_id, tag) VALUES
-(1,'smartphone'), (1,'android'), (2,'laptop'), (2,'computer'),
-(3,'clothing'), (4,'audio'), (4,'wireless'), (5,'bag');
+(1,'smartphone'),
+(1,'android'),
+(2,'laptop'),
+(2,'computer'),
+(3,'clothing'),
+(4,'audio'),
+(4,'wireless'),
+(5,'bag');
 
 INSERT INTO Orders
 (customer_id, address_id, order_date, order_status) VALUES
@@ -173,10 +179,14 @@ INSERT INTO Orders
 
 INSERT INTO Order_Item
 (order_id, product_id, quantity, unit_price) VALUES
-(1,1,1,65000.00), (1,4,1,1999.00),
-(2,2,1,55000.00), (2,5,1,1499.00),
-(3,3,3,499.00), (4,4,2,1999.00),
-(4,3,2,499.00), (5,5,1,1499.00);
+(1,1,1,65000.00),
+(1,4,1,1999.00),
+(2,2,1,55000.00),
+(2,5,1,1499.00),
+(3,3,3,499.00),
+(4,4,2,1999.00),
+(4,3,2,499.00),
+(5,5,1,1499.00);
 
 INSERT INTO Payment
 (order_id, payment_date, amount, method, status, transaction_id) VALUES
@@ -191,20 +201,34 @@ INSERT INTO Payment
 -- =========================================================
 
 CREATE OR REPLACE VIEW Order_Details AS
-SELECT o.order_id, CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
-       p.product_name, oi.quantity, oi.unit_price,
-       oi.quantity * oi.unit_price AS subtotal,
-       o.order_date, o.order_status
+SELECT
+    o.order_id,
+    CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
+    p.product_name,
+    oi.quantity,
+    oi.unit_price,
+    oi.quantity * oi.unit_price AS subtotal,
+    o.order_date,
+    o.order_status
 FROM Orders o
 JOIN Customer c ON o.customer_id = c.customer_id
 JOIN Order_Item oi ON o.order_id = oi.order_id
 JOIN Product p ON oi.product_id = p.product_id;
 
 CREATE OR REPLACE VIEW Customer_Order_Summary AS
-SELECT c.customer_id, CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
-       COUNT(DISTINCT o.order_id) AS total_orders,
-       COALESCE(SUM(CASE WHEN o.order_status <> 'Cancelled'
-                         THEN oi.quantity * oi.unit_price ELSE 0 END), 0) AS total_spent
+SELECT
+    c.customer_id,
+    CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
+    COUNT(DISTINCT o.order_id) AS total_orders,
+    COALESCE(
+        SUM(
+            CASE
+                WHEN o.order_status <> 'Cancelled'
+                THEN oi.quantity * oi.unit_price
+                ELSE 0
+            END
+        ), 0
+    ) AS total_spent
 FROM Customer c
 LEFT JOIN Orders o ON c.customer_id = o.customer_id
 LEFT JOIN Order_Item oi ON o.order_id = oi.order_id
@@ -221,8 +245,10 @@ AS $$
 DECLARE
     available_stock INTEGER;
 BEGIN
-    SELECT stock_quantity INTO available_stock
-    FROM Product WHERE product_id = NEW.product_id;
+    SELECT stock_quantity
+    INTO available_stock
+    FROM Product
+    WHERE product_id = NEW.product_id;
 
     IF available_stock IS NULL THEN
         RAISE EXCEPTION 'Product does not exist';
@@ -250,7 +276,8 @@ CREATE OR REPLACE PROCEDURE Update_Order_Status(
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    UPDATE Orders SET order_status = p_status
+    UPDATE Orders
+    SET order_status = p_status
     WHERE order_id = p_order_id;
 END;
 $$;
@@ -259,61 +286,105 @@ $$;
 -- REPRESENTATIVE SQL QUERIES
 -- =========================================================
 
+-- 1. Display all products
 SELECT * FROM Product;
 
-SELECT c.customer_id, CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
-       o.order_id, o.order_date, o.order_status
-FROM Customer c JOIN Orders o ON c.customer_id = o.customer_id;
+-- 2. Display customers and their orders
+SELECT
+    c.customer_id,
+    CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
+    o.order_id,
+    o.order_date,
+    o.order_status
+FROM Customer c
+JOIN Orders o ON c.customer_id = o.customer_id;
 
+-- 3. Complete order details
 SELECT * FROM Order_Details;
 
+-- 4. Total sales excluding cancelled orders
 SELECT COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS total_sales
-FROM Orders o JOIN Order_Item oi ON o.order_id = oi.order_id
+FROM Orders o
+JOIN Order_Item oi ON o.order_id = oi.order_id
 WHERE o.order_status <> 'Cancelled';
 
-SELECT p.product_name, SUM(oi.quantity) AS units_sold
-FROM Product p JOIN Order_Item oi ON p.product_id = oi.product_id
+-- 5. Best-selling products
+SELECT
+    p.product_name,
+    SUM(oi.quantity) AS units_sold
+FROM Product p
+JOIN Order_Item oi ON p.product_id = oi.product_id
 JOIN Orders o ON oi.order_id = o.order_id
 WHERE o.order_status <> 'Cancelled'
 GROUP BY p.product_id, p.product_name
 ORDER BY units_sold DESC;
 
-SELECT c.customer_id, CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
-       SUM(oi.quantity * oi.unit_price) AS total_spent
-FROM Customer c JOIN Orders o ON c.customer_id = o.customer_id
+-- 6. Customers spending more than 50000
+SELECT
+    c.customer_id,
+    CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
+    SUM(oi.quantity * oi.unit_price) AS total_spent
+FROM Customer c
+JOIN Orders o ON c.customer_id = o.customer_id
 JOIN Order_Item oi ON o.order_id = oi.order_id
 WHERE o.order_status <> 'Cancelled'
 GROUP BY c.customer_id, c.first_name, c.last_name
 HAVING SUM(oi.quantity * oi.unit_price) > 50000;
 
+-- 7. Low-stock products
 SELECT product_id, product_name, stock_quantity
-FROM Product WHERE stock_quantity < 50 ORDER BY stock_quantity;
+FROM Product
+WHERE stock_quantity < 50
+ORDER BY stock_quantity;
 
+-- 8. Pending orders
 SELECT order_id, customer_id, order_date
-FROM Orders WHERE order_status = 'Pending';
+FROM Orders
+WHERE order_status = 'Pending';
 
-SELECT product_name, price FROM Product
+-- 9. Subquery: products priced above average
+SELECT product_name, price
+FROM Product
 WHERE price > (SELECT AVG(price) FROM Product);
 
-SELECT p.product_name, p.price, c.category_name
-FROM Product p JOIN Category c ON p.category_id = c.category_id;
+-- 10. JOIN: products with categories
+SELECT
+    p.product_name,
+    p.price,
+    c.category_name
+FROM Product p
+JOIN Category c ON p.category_id = c.category_id;
 
-UPDATE Orders SET order_status = 'Shipped' WHERE order_id = 3;
+-- 11. UPDATE example
+UPDATE Orders
+SET order_status = 'Shipped'
+WHERE order_id = 3;
 
+-- 12. Stored procedure example
 CALL Update_Order_Status(3, 'Delivered');
 
+-- 13. View query
 SELECT * FROM Customer_Order_Summary;
 
+-- 14. CRUD examples
 INSERT INTO Customer(first_name, last_name, email)
 VALUES ('Test','User','test@example.com');
 
-SELECT * FROM Customer WHERE email = 'test@example.com';
-
-UPDATE Customer SET last_name = 'Updated'
+SELECT *
+FROM Customer
 WHERE email = 'test@example.com';
 
-DELETE FROM Customer WHERE email = 'test@example.com';
+UPDATE Customer
+SET last_name = 'Updated'
+WHERE email = 'test@example.com';
 
--- OPTIONAL: stock update after a successful order transaction
--- UPDATE Product SET stock_quantity = stock_quantity - 2
+DELETE FROM Customer
+WHERE email = 'test@example.com';
+
+-- =========================================================
+-- OPTIONAL: STOCK UPDATE AFTER A SUCCESSFUL ORDER
+-- Run this only as part of your application/order transaction.
+-- =========================================================
+-- UPDATE Product
+-- SET stock_quantity = stock_quantity - 2
 -- WHERE product_id = 4 AND stock_quantity >= 2;
