@@ -1,2 +1,0 @@
--- Insert representative sample records into the tables.
--- Keep foreign-key values consistent with the parent tables.
